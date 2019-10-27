@@ -1,0 +1,116 @@
+import androidx.fragment.app.FragmentActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.net.PlacesClient;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Iterator;
+import java.util.List;
+
+import static java.sql.DriverManager.println;
+
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+    private GoogleMap mMap;
+    private PlacesClient placesClient;
+    final private String api_key = "AIzaSyDn2gjqb-WW-MgSXoWKCY1k1WzkJUjLNOI";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), api_key);
+        }
+        // Create a new Places client instance
+        placesClient = Places.createClient(this);
+
+        // Get a request queue for our searches
+        RequestQueue queue = jsonSingleton.getInstance(this.getApplicationContext()).getRequestQueue();
+
+        setContentView(R.layout.activity_maps);
+        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    private String createUrl(double latitude, double longitude, String place){
+        StringBuilder placesUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        placesUrl.append("location="+latitude+","+longitude);
+        placesUrl.append("&type="+place);
+        placesUrl.append("&rankby=distance");
+        placesUrl.append("&opennow=true");
+        placesUrl.append("&key="+api_key);
+
+        Log.d("Maps", "URL: " + placesUrl.toString());
+        return placesUrl.toString();
+    }
+
+    private void fetchReq(String url) {
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url,
+                null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject Response) {
+                Log.d("Places Search", "Response=" + Response.toString());
+
+            }
+        },
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("Places Search", "Response: Error!");
+
+                    }
+                });
+        jsonSingleton.getInstance(this).addToRequestQueue(jsonObjectRequest);
+    }
+
+
+
+    public void searchNearestPlaces(double latitude, double longitude){
+        String place = "gas_station";
+        String req = createUrl(latitude, longitude, place);
+        fetchReq(req);
+    }
+
+
+
+
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        // Add a marker in Sydney and move the camera
+        LatLng sydney = new LatLng(-34, 151);
+        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        searchNearestPlaces(37.86,-122.25);
+    }
+}
