@@ -1,0 +1,40 @@
+import android.content.Context;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+
+public class jsonSingleton {
+    private static jsonSingleton instance;
+    private RequestQueue requestQueue;
+    private static Context ctx;
+
+    /* Class uses Volley API to create request queue for JSON HTTP requests
+       We will call jsonSingleton.getInstance.getRequestQueue in the init of
+       our app. Then anytime we want to search nearby places, we will create
+       a JsonObjectRequest using HTTP url with GPS coordinates from smartDeviceLink.
+     */
+    private jsonSingleton(Context context) {
+        ctx = context;
+        requestQueue = getRequestQueue();
+    }
+
+    public static synchronized jsonSingleton getInstance(Context context) {
+        if (instance == null) {
+            instance = new jsonSingleton(context);
+        }
+        return instance;
+    }
+
+    public <T> void addToRequestQueue(Request<T> req) {
+        getRequestQueue().add(req);
+    }
+
+    public RequestQueue getRequestQueue() {
+        if (requestQueue == null) {
+
+            requestQueue = Volley.newRequestQueue(ctx.getApplicationContext());
+        }
+        return requestQueue;
+    }
+}
